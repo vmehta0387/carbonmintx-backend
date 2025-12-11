@@ -1,0 +1,368 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  PROJECT_OWNER
+  VALIDATOR
+  BUYER
+}
+
+enum ProjectStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_VALIDATION
+  APPROVED
+  REJECTED
+  REGISTERED
+  MINTED
+}
+
+enum ProjectType {
+  // Renewable Energy
+  SOLAR_POWER
+  WIND_POWER
+  HYDRO_POWER
+  BIOMASS_POWER
+  GEOTHERMAL
+  WASTE_TO_ENERGY
+  
+  // Energy Efficiency
+  EFFICIENT_LIGHTING
+  EFFICIENT_APPLIANCES
+  INDUSTRIAL_HEAT_RECOVERY
+  EFFICIENT_MOTORS
+  
+  // Improved Cookstoves
+  BIOMASS_COOKSTOVES
+  LPG_ADOPTION
+  COMMUNITY_KITCHENS
+  
+  // Waste Management
+  LANDFILL_METHANE_CAPTURE
+  COMPOSTING
+  ANAEROBIC_DIGESTION
+  WASTEWATER_METHANE
+  
+  // Forestry & Land Use
+  REFORESTATION
+  AFFORESTATION
+  AVOIDED_DEFORESTATION
+  FORESTRY_MANAGEMENT
+  MANGROVE_RESTORATION
+  SOIL_CARBON_SEQUESTRATION
+  
+  // Biochar
+  BIOCHAR_PRODUCTION
+  
+  // Carbon Capture & Storage
+  CEMENT_CCS
+  POWER_PLANT_CCS
+  
+  // Blue Carbon
+  MANGROVES_RESTORATION
+  SEAGRASS_RESTORATION
+  SALT_MARSH_PROJECTS
+  
+  // Agricultural Livestock
+  DAIRY_MANURE_MANAGEMENT
+  CATTLE_ENTERIC_FERMENTATION
+  
+  // Soil Carbon
+  NO_TILL_FARMING
+  COVER_CROPPING
+  SOIL_ENRICHMENT
+  
+  // Fuel Switching
+  COAL_TO_GAS
+  DIESEL_TO_ELECTRIC
+  
+  // Legacy types for backward compatibility
+  RENEWABLE_ENERGY
+  ENERGY_EFFICIENCY
+  METHANE_CAPTURE
+  SOIL_CARBON
+  BLUE_CARBON
+  COOKSTOVES
+  INDUSTRIAL
+}
+
+enum CarbonStandard {
+  VERRA_VCS
+  GOLD_STANDARD
+  CDM
+  CAR
+  ACR
+  PLAN_VIVO
+}
+
+enum DocumentType {
+  PROJECT_DESIGN
+  BASELINE_STUDY
+  MONITORING_PLAN
+  ENVIRONMENTAL_IMPACT
+  LAND_RIGHTS
+  STAKEHOLDER_CONSULTATION
+  ADDITIONALITY_PROOF
+  OTHER
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  CANCELLED
+}
+
+model User {
+  id            String    @id @default(uuid())
+  walletAddress String    @unique
+  role          UserRole?
+  fullName      String?
+  email         String?
+  phone         String?
+  country       String?
+  onboardingCompleted Boolean @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  profile       UserProfile?
+  policies      UserPolicies?
+  kyc           KYC?
+  validatorDocs ValidatorDocuments?
+  
+  projects      Project[]
+  validations   Validation[]
+  listings      Listing[]
+  purchases     Purchase[]
+  certificates  Certificate[]
+}
+
+model UserProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  fullName  String
+  email     String
+  phone     String
+  country   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model UserPolicies {
+  id                          String   @id @default(uuid())
+  userId                      String   @unique
+  termsOfUse                  Boolean  @default(false)
+  platformFees                Boolean  @default(false)
+  climateCompliance           Boolean  @default(false)
+  antiFraud                   Boolean  @default(false)
+  doubleCountingPrevention    Boolean  @default(false)
+  blockchainIrreversible      Boolean  @default(false)
+  privacyDataUsage            Boolean  @default(false)
+  feesAcknowledgment          Boolean  @default(false)
+  projectOwnerAuthenticity    Boolean? // For PROJECT_OWNER only
+  validatorEthics             Boolean? // For VALIDATOR only
+  acceptedAt                  DateTime @default(now())
+  
+  user                        User     @relation(fields: [userId], references: [id])
+}
+
+model KYC {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  companyName   String
+  companyType   String?
+  industry      String?
+  contactPerson String?
+  gstNumber     String?
+  panNumber     String?
+  cinNumber     String?
+  billingAddress String?
+  esgContact    String?
+  status        String   @default("PENDING")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  user          User     @relation(fields: [userId], references: [id])
+}
+
+model ValidatorDocuments {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  accreditationBody     String
+  certificateNumber     String
+  experienceYears       Int
+  documentUrl           String
+  status                String   @default("PENDING")
+  adminApprovedAt       DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  user                  User     @relation(fields: [userId], references: [id])
+}
+
+model ValidatorApplication {
+  id                    String   @id @default(uuid())
+  fullName              String
+  email                 String
+  phone                 String?
+  walletAddress         String?
+  organizationName      String
+  accreditationBody     String
+  certificateNumber     String
+  experienceYears       String?
+  documentUrl           String
+  status                String   @default("PENDING")
+  adminComments         String?
+  reviewedAt            DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model Project {
+  id                    String            @id @default(uuid())
+  name                  String
+  description           String
+  location              String
+  latitude              Float?
+  longitude             Float?
+  projectType           ProjectType
+  carbonStandard        CarbonStandard
+  methodology           String
+  estimatedCredits      Int
+  creditingPeriodStart  DateTime
+  creditingPeriodEnd    DateTime
+  vintageYear           Int
+  additionalityProof    String
+  status                ProjectStatus     @default(DRAFT)
+  tokenId               String?
+  ownerId               String
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  
+  owner                 User              @relation(fields: [ownerId], references: [id])
+  documents             Document[]
+  validations           Validation[]
+  monitoringReports     MonitoringReport[]
+  creditBatches         CreditBatch[]
+}
+
+model Document {
+  id        String        @id @default(uuid())
+  filename  String
+  type      DocumentType
+  url       String
+  size      Int
+  mimeType  String
+  projectId String
+  createdAt DateTime      @default(now())
+  
+  project   Project       @relation(fields: [projectId], references: [id])
+}
+
+model MonitoringReport {
+  id                String   @id @default(uuid())
+  projectId         String
+  reportingPeriod   String
+  actualReduction   Int
+  verificationDate  DateTime?
+  verifiedBy        String?
+  documentUrl       String
+  status            String   @default("PENDING")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  project           Project  @relation(fields: [projectId], references: [id])
+}
+
+enum ValidationStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  CORRECTIONS_REQUESTED
+}
+
+model Validation {
+  id                String           @id @default(uuid())
+  projectId         String
+  validatorId       String
+  status            ValidationStatus @default(PENDING)
+  comments          String?
+  reportUrl         String?
+  findings          String?
+  recommendations   String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  
+  project           Project          @relation(fields: [projectId], references: [id])
+  validator         User             @relation(fields: [validatorId], references: [id])
+}
+
+model Listing {
+  id            String        @id @default(uuid())
+  tokenId       String
+  amount        Int
+  pricePerToken Float
+  sellerId      String
+  status        ListingStatus @default(ACTIVE)
+  txHash        String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  seller        User          @relation(fields: [sellerId], references: [id])
+  purchases     Purchase[]
+}
+
+model Purchase {
+  id        String   @id @default(uuid())
+  listingId String
+  buyerId   String
+  amount    Int
+  totalPrice Float
+  txHash    String
+  createdAt DateTime @default(now())
+  
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  buyer     User     @relation(fields: [buyerId], references: [id])
+}
+
+model Certificate {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenId   String
+  amount    Int
+  pdfUrl    String
+  txHash    String
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model CreditBatch {
+  id                  String   @id @default(uuid())
+  projectId           String
+  tokenId             String
+  verifiedTonnes      Int
+  vintageYear         Int
+  methodology         String
+  metadataUri         String
+  calculationInputs   Json
+  calculationSummary  Json
+  monitoringPeriod    Json
+  evidence            String[]
+  status              String   @default("MINTED")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  project             Project  @relation(fields: [projectId], references: [id])
+  
+  @@unique([projectId, vintageYear])
+}

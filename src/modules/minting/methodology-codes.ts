@@ -1,0 +1,120 @@
+export const METHODOLOGY_CODES = {
+  // Renewable Energy
+  SOLAR_POWER: ['ACM0002', 'AMS-I.D', 'AMS-I.F'],
+  WIND_POWER: ['ACM0002', 'AMS-I.D'],
+  HYDRO_POWER: ['ACM0002', 'AMS-I.D'],
+  BIOMASS_POWER: ['ACM0002', 'AMS-I.D'],
+  GEOTHERMAL: ['ACM0002', 'AMS-I.D'],
+  WASTE_TO_ENERGY: ['ACM0002', 'AMS-I.D'],
+  
+  // Energy Efficiency
+  EFFICIENT_LIGHTING: ['AMS-II.C'],
+  EFFICIENT_APPLIANCES: ['AMS-II.E'],
+  INDUSTRIAL_HEAT_RECOVERY: ['AMS-II.E'],
+  EFFICIENT_MOTORS: ['AMS-II.E'],
+  
+  // Improved Cookstoves
+  BIOMASS_COOKSTOVES: ['AMS-II.G', 'GS-ICS'],
+  LPG_ADOPTION: ['AMS-II.J'],
+  COMMUNITY_KITCHENS: ['AMS-II.G'],
+  
+  // Waste Management
+  LANDFILL_METHANE_CAPTURE: ['ACM0001', 'AMS-III.H'],
+  COMPOSTING: ['AMS-III.F'],
+  ANAEROBIC_DIGESTION: ['ACM0001'],
+  WASTEWATER_METHANE: ['AMS-III.H'],
+  
+  // Forestry & Land Use
+  REFORESTATION: ['VCS-VM0015', 'ARR-CDM'],
+  AFFORESTATION: ['VCS-VM0015', 'ARR-CDM'],
+  AVOIDED_DEFORESTATION: ['REDD+', 'VCS-VM0015'],
+  FORESTRY_MANAGEMENT: ['VCS-VM0007'],
+  MANGROVE_RESTORATION: ['VCS-VM0033'],
+  SOIL_CARBON_SEQUESTRATION: ['VCS-SOIL'],
+  
+  // Biochar
+  BIOCHAR_PRODUCTION: ['PURO-BIOCHAR', 'CSI-BIOCHAR'],
+  
+  // Carbon Capture & Storage
+  CEMENT_CCS: ['CCS-CDM'],
+  POWER_PLANT_CCS: ['CCS-CDM'],
+  
+  // Blue Carbon
+  MANGROVES_RESTORATION: ['VCS-VM0033'],
+  SEAGRASS_RESTORATION: ['VCS-VM0033'],
+  SALT_MARSH_PROJECTS: ['VCS-VM0033'],
+  
+  // Agricultural Livestock
+  DAIRY_MANURE_MANAGEMENT: ['AMS-III.D'],
+  CATTLE_ENTERIC_FERMENTATION: ['AMS-III.D'],
+  
+  // Soil Carbon
+  NO_TILL_FARMING: ['VCS-SOIL', 'REGEN-NETWORK'],
+  COVER_CROPPING: ['VCS-SOIL'],
+  SOIL_ENRICHMENT: ['VCS-SOIL'],
+  
+  // Fuel Switching
+  COAL_TO_GAS: ['AMS-III.A'],
+  DIESEL_TO_ELECTRIC: ['AMS-III.A', 'GS-FUEL-SWITCH']
+};
+
+export const PROJECT_CATEGORIES = {
+  'Renewable Energy': [
+    'SOLAR_POWER',
+    'WIND_POWER', 
+    'HYDRO_POWER',
+    'BIOMASS_POWER',
+    'GEOTHERMAL',
+    'WASTE_TO_ENERGY'
+  ],
+  'Energy Efficiency': [
+    'EFFICIENT_LIGHTING',
+    'EFFICIENT_APPLIANCES',
+    'INDUSTRIAL_HEAT_RECOVERY',
+    'EFFICIENT_MOTORS'
+  ],
+  'Improved Cookstoves': [
+    'BIOMASS_COOKSTOVES',
+    'LPG_ADOPTION',
+    'COMMUNITY_KITCHENS'
+  ],
+  'Waste Management': [
+    'LANDFILL_METHANE_CAPTURE',
+    'COMPOSTING',
+    'ANAEROBIC_DIGESTION',
+    'WASTEWATER_METHANE'
+  ],
+  'Forestry & Land Use': [
+    'REFORESTATION',
+    'AFFORESTATION',
+    'AVOIDED_DEFORESTATION',
+    'FORESTRY_MANAGEMENT',
+    'MANGROVE_RESTORATION',
+    'SOIL_CARBON_SEQUESTRATION'
+  ],
+  'Biochar': [
+    'BIOCHAR_PRODUCTION'
+  ],
+  'Carbon Capture & Storage': [
+    'CEMENT_CCS',
+    'POWER_PLANT_CCS'
+  ],
+  'Blue Carbon': [
+    'MANGROVES_RESTORATION',
+    'SEAGRASS_RESTORATION',
+    'SALT_MARSH_PROJECTS'
+  ],
+  'Agricultural Livestock': [
+    'DAIRY_MANURE_MANAGEMENT',
+    'CATTLE_ENTERIC_FERMENTATION'
+  ],
+  'Soil Carbon': [
+    'NO_TILL_FARMING',
+    'COVER_CROPPING',
+    'SOIL_ENRICHMENT'
+  ],
+  'Fuel Switching': [
+    'COAL_TO_GAS',
+    'DIESEL_TO_ELECTRIC'
+  ]
+};
