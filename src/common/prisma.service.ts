@@ -10,7 +10,17 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     } catch (error) {
       console.error('❌ Database connection failed:', error.message);
       console.error('DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
-      throw error;
+      console.log('🔄 Retrying with connection pooling...');
+      
+      // Retry with connection pooling
+      try {
+        await this.$disconnect();
+        await this.$connect();
+        console.log('✅ Database connected with retry');
+      } catch (retryError) {
+        console.error('❌ Retry failed:', retryError.message);
+        throw retryError;
+      }
     }
   }
 }

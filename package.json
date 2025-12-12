@@ -11,7 +11,8 @@
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "test:db": "node test-db.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",
