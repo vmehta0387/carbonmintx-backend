@@ -10,10 +10,14 @@ async function bootstrap() {
   
   // Configure CORS for production
   app.enableCors({
-    origin: process.env.NODE_ENV === 'production' 
-      ? [process.env.FRONTEND_URL || 'https://your-frontend-domain.vercel.app']
-      : true,
+    origin: [
+      'https://carbonmintx-frontend.vercel.app',
+      'http://localhost:3000',
+      process.env.FRONTEND_URL
+    ].filter(Boolean),
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
   
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
