@@ -11,7 +11,7 @@ async function bootstrap() {
   // Configure CORS for production
   app.enableCors({
     origin: [
-      'https://carbonmintx-frontend.vercel.app',
+      'https://carbonmintx.vercel.app',
       'http://localhost:3000',
       process.env.FRONTEND_URL
     ].filter(Boolean),
