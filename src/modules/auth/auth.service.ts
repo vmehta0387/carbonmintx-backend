@@ -12,13 +12,21 @@ export class AuthService {
   ) {}
 
   async loginWallet(walletAddress: string, signature: string, message: string) {
-    const isValid = await verifyMessage({
-      address: walletAddress as `0x${string}`,
-      message,
-      signature: signature as `0x${string}`,
-    });
+    try {
+      // Ensure signature is properly formatted
+      const formattedSignature = signature.startsWith('0x') ? signature : `0x${signature}`;
+      
+      const isValid = await verifyMessage({
+        address: walletAddress as `0x${string}`,
+        message,
+        signature: formattedSignature as `0x${string}`,
+      });
 
-    if (!isValid) throw new UnauthorizedException('Invalid signature');
+      if (!isValid) throw new UnauthorizedException('Invalid signature');
+    } catch (error) {
+      console.error('Signature verification error:', error);
+      throw new UnauthorizedException('Invalid signature format');
+    }
 
     let user = await this.prisma.user.findUnique({ where: { walletAddress } });
     if (!user) {
@@ -34,13 +42,21 @@ export class AuthService {
   }
 
   async signup(data: { walletAddress: string; signature: string; message: string }) {
-    const isValid = await verifyMessage({
-      address: data.walletAddress as `0x${string}`,
-      message: data.message,
-      signature: data.signature as `0x${string}`,
-    });
+    try {
+      // Ensure signature is properly formatted
+      const formattedSignature = data.signature.startsWith('0x') ? data.signature : `0x${data.signature}`;
+      
+      const isValid = await verifyMessage({
+        address: data.walletAddress as `0x${string}`,
+        message: data.message,
+        signature: formattedSignature as `0x${string}`,
+      });
 
-    if (!isValid) throw new UnauthorizedException('Invalid signature');
+      if (!isValid) throw new UnauthorizedException('Invalid signature');
+    } catch (error) {
+      console.error('Signature verification error:', error);
+      throw new UnauthorizedException('Invalid signature format');
+    }
 
     let user = await this.prisma.user.findUnique({ where: { walletAddress: data.walletAddress } });
     
