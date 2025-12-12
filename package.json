@@ -8,6 +8,7 @@
     "build": "nest build",
     "deploy:build": "npm run prisma:generate && npm run build",
     "deploy:migrate": "prisma migrate deploy",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
