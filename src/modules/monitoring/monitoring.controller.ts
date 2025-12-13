@@ -24,8 +24,9 @@ export class MonitoringController {
   }
 
   @Post('verify/:reportId')
-  @Roles(UserRole.VALIDATOR)
+  @Roles(UserRole.VALIDATOR, UserRole.ADMIN)
   verifyReport(@Param('reportId') reportId: string, @Body() body: { validatorId: string }) {
+    console.log('Verifying report:', reportId, 'by validator:', body.validatorId);
     return this.monitoringService.verifyReport(reportId, body.validatorId);
   }
 }

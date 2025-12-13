@@ -19,7 +19,8 @@ export class ValidatorApplicationService {
     
     console.log('Creating validator application:', applicationData);
     
-    return this.prisma.validatorApplication.create({
+    // Create the validator application
+    const application = await this.prisma.validatorApplication.create({
       data: {
         fullName: applicationData.fullName,
         email: applicationData.email,
@@ -33,6 +34,31 @@ export class ValidatorApplicationService {
         status: 'PENDING'
       }
     });
+
+    // Create a basic user record if wallet address is provided
+    if (applicationData.walletAddress) {
+      try {
+        const existingUser = await this.prisma.user.findUnique({
+          where: { walletAddress: applicationData.walletAddress }
+        });
+        
+        if (!existingUser) {
+          await this.prisma.user.create({
+            data: {
+              walletAddress: applicationData.walletAddress,
+              fullName: applicationData.fullName,
+              email: applicationData.email,
+              phone: applicationData.phone,
+              onboardingCompleted: false
+            }
+          });
+        }
+      } catch (error) {
+        console.log('User creation failed (may already exist):', error.message);
+      }
+    }
+
+    return application;
   }
 
   async getPendingApplications() {

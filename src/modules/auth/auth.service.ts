@@ -30,7 +30,29 @@ export class AuthService {
 
     let user = await this.prisma.user.findUnique({ where: { walletAddress } });
     if (!user) {
-      user = await this.prisma.user.create({ data: { walletAddress } });
+      // Check if user has a pending validator application
+      const validatorApp = await this.prisma.validatorApplication.findFirst({
+        where: { walletAddress },
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      if (validatorApp && validatorApp.status === 'PENDING') {
+        throw new UnauthorizedException('Validator application pending approval');
+      }
+      
+      throw new UnauthorizedException('User not found');
+    }
+
+    // If user exists but has no role and has pending validator application
+    if (!user.role) {
+      const validatorApp = await this.prisma.validatorApplication.findFirst({
+        where: { walletAddress },
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      if (validatorApp && validatorApp.status === 'PENDING') {
+        throw new UnauthorizedException('Validator application pending approval');
+      }
     }
 
     const payload = { sub: user.id, walletAddress: user.walletAddress, role: user.role };
