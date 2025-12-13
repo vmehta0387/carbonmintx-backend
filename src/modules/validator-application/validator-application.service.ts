@@ -56,67 +56,91 @@ export class ValidatorApplicationService {
   }
 
   async approveApplication(id: string, adminComments?: string) {
-    const application = await this.prisma.validatorApplication.update({
-      where: { id },
-      data: { 
-        status: 'APPROVED',
-        adminComments,
-        reviewedAt: new Date()
-      }
-    });
-
-    // Check if user already exists with this wallet address
-    let user = await this.prisma.user.findUnique({
-      where: { walletAddress: application.walletAddress || '' }
-    });
-
-    if (!user) {
-      // Create validator user account only if doesn't exist
-      user = await this.prisma.user.create({
-        data: {
-          walletAddress: application.walletAddress || '',
-          role: 'VALIDATOR'
+    try {
+      const application = await this.prisma.validatorApplication.update({
+        where: { id },
+        data: { 
+          status: 'APPROVED',
+          adminComments,
+          reviewedAt: new Date()
         }
       });
-    } else {
-      // Update existing user role to VALIDATOR
-      user = await this.prisma.user.update({
-        where: { id: user.id },
-        data: { role: 'VALIDATOR' }
+
+      if (!application.walletAddress) {
+        throw new Error('Wallet address is required for approval');
+      }
+
+      // Check if user already exists with this wallet address
+      let user = await this.prisma.user.findUnique({
+        where: { walletAddress: application.walletAddress }
       });
+
+      if (!user) {
+        // Create validator user account only if doesn't exist
+        user = await this.prisma.user.create({
+          data: {
+            walletAddress: application.walletAddress,
+            role: 'VALIDATOR',
+            fullName: application.fullName,
+            email: application.email,
+            phone: application.phone,
+            onboardingCompleted: true
+          }
+        });
+      } else {
+        // Update existing user role to VALIDATOR
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { 
+            role: 'VALIDATOR',
+            onboardingCompleted: true
+          }
+        });
+      }
+
+      // Check if profile already exists
+      const existingProfile = await this.prisma.userProfile.findUnique({
+        where: { userId: user.id }
+      });
+
+      if (!existingProfile) {
+        // Create user profile
+        await this.prisma.userProfile.create({
+          data: {
+            userId: user.id,
+            fullName: application.fullName,
+            email: application.email,
+            phone: application.phone || '',
+            country: ''
+          }
+        });
+      }
+
+      // Check if validator documents already exist
+      const existingDocs = await this.prisma.validatorDocuments.findUnique({
+        where: { userId: user.id }
+      });
+
+      if (!existingDocs) {
+        // Create validator documents record
+        await this.prisma.validatorDocuments.create({
+          data: {
+            userId: user.id,
+            accreditationBody: application.accreditationBody,
+            certificateNumber: application.certificateNumber,
+            experienceYears: parseInt(application.experienceYears?.split('-')[0] || '0') || 0,
+            documentUrl: application.documentUrl,
+            status: 'APPROVED',
+            adminApprovedAt: new Date()
+          }
+        });
+      }
+
+      return { application, user };
+    } catch (error) {
+      console.error('Error approving validator application:', error);
+      throw error;
     }
-
-    // Create user profile
-    await this.prisma.userProfile.create({
-      data: {
-        userId: user.id,
-        fullName: application.fullName,
-        email: application.email,
-        phone: application.phone || '',
-        country: ''
-      }
-    });
-
-    // Create validator documents record
-    await this.prisma.validatorDocuments.create({
-      data: {
-        userId: user.id,
-        accreditationBody: application.accreditationBody,
-        certificateNumber: application.certificateNumber,
-        experienceYears: parseInt(application.experienceYears?.split('-')[0] || '0') || 0,
-        documentUrl: application.documentUrl,
-        status: 'APPROVED',
-        adminApprovedAt: new Date()
-      }
-    });
-
-    // Mark user onboarding as completed
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { onboardingCompleted: true }
-    });
-
-    return { application, user };
   }
 
   async rejectApplication(id: string, adminComments: string) {
