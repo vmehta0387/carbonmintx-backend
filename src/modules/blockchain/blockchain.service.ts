@@ -42,9 +42,9 @@ export class BlockchainService implements OnModuleInit {
   async mintCredits(to: string, amount: number, projectId: string = ''): Promise<string> {
     if (!this.registryContract) throw new Error('Blockchain service not initialized');
     
-    // Calculate mint fee: 0.001 MATIC per credit
-    const mintFee = ethers.parseEther('0.001');
-    const totalFee = mintFee * BigInt(amount);
+    // Contract requires 0.001 ETH per credit
+    const mintFeePerCredit = ethers.parseEther('0.001');
+    const totalFee = mintFeePerCredit * BigInt(amount);
     
     const tx = await this.registryContract.mint(ethers.getAddress(to), amount, projectId, { value: totalFee });
     const receipt = await tx.wait();
@@ -70,9 +70,9 @@ export class BlockchainService implements OnModuleInit {
     if (!this.registryContract) throw new Error('500_CHAIN_ERROR: Blockchain service not initialized');
     
     try {
-      // Calculate mint fee: 0.001 MATIC per credit
-      const mintFee = ethers.parseEther('0.001');
-      const totalFee = mintFee * BigInt(amount);
+      // Contract requires 0.001 ETH per credit
+      const mintFeePerCredit = ethers.parseEther('0.001');
+      const totalFee = mintFeePerCredit * BigInt(amount);
       
       const tx = await this.registryContract.mint(
         ethers.getAddress(ownerAddress), 

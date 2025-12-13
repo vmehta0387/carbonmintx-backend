@@ -11,6 +11,7 @@ import { MonitoringModule } from './modules/monitoring/monitoring.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { MintingModule } from './modules/minting/minting.module';
 import { ValidatorApplicationModule } from './modules/validator-application/validator-application.module';
+import { FilesModule } from './modules/files/files.module';
 import { PrismaService } from './common/prisma.service';
 
 @Module({
@@ -27,6 +28,7 @@ import { PrismaService } from './common/prisma.service';
     OnboardingModule,
     MintingModule,
     ValidatorApplicationModule,
+    FilesModule,
   ],
   providers: [PrismaService],
 })

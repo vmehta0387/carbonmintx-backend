@@ -1,7 +1,10 @@
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { MintingService } from './minting.service';
 import { JwtAuthGuard } from '../../common/jwt-auth.guard';
+import { RolesGuard } from '../../common/roles.guard';
+import { Roles } from '../../common/roles.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
+import { UserRole } from '@prisma/client';
 
 interface MintRequestDto {
   projectId: string;
@@ -14,14 +17,15 @@ interface MintRequestDto {
 }
 
 @Controller('mint')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class MintingController {
   constructor(private mintingService: MintingService) {}
 
-  @Post()
-  async mintCredits(@CurrentUser() user: any, @Body() request: MintRequestDto) {
+  @Post('authorize')
+  @Roles(UserRole.PROJECT_OWNER, UserRole.ADMIN)
+  async getMintAuthorization(@CurrentUser() user: any, @Body() request: MintRequestDto) {
     try {
-      return await this.mintingService.mintCredits(user.id, request);
+      return await this.mintingService.createMintAuthorization(user.id, request);
     } catch (error) {
       const message = error.message;
       
@@ -40,6 +44,16 @@ export class MintingController {
       } else {
         throw new Error('500_INTERNAL_ERROR: ' + message);
       }
+    }
+  }
+
+  @Post()
+  @Roles(UserRole.PROJECT_OWNER, UserRole.ADMIN)
+  async mint(@CurrentUser() user: any, @Body() request: MintRequestDto) {
+    try {
+      return await this.mintingService.mintCredits(user.id, request);
+    } catch (error) {
+      throw new Error(error.message || 'Minting failed');
     }
   }
 }

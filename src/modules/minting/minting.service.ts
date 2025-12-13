@@ -75,9 +75,9 @@ export class MintingService {
     private blockchainService: BlockchainService,
   ) {}
 
-  async mintCredits(validatorId: string, request: MintRequest) {
+  async createMintAuthorization(userId: string, request: MintRequest) {
     // Validation Rules
-    await this.validateMintingRules(request.projectId, request.vintageYear, validatorId);
+    await this.validateMintingRules(request.projectId, request.vintageYear, userId);
     
     // Calculate verified tonnes using industry formulas
     const { rawTonnes, verifiedTonnes, calculationSummary } = this.calculateCredits(
@@ -90,7 +90,7 @@ export class MintingService {
     }
     
     // Create metadata and upload to IPFS
-    const metadata = await this.createMetadata(request, verifiedTonnes, calculationSummary, validatorId);
+    const metadata = await this.createMetadata(request, verifiedTonnes, calculationSummary, userId);
     const metadataUri = await this.uploadToIPFS(metadata);
     
     // Get project owner address
@@ -99,23 +99,24 @@ export class MintingService {
       include: { owner: true }
     });
     
-    // Mint on blockchain
-    const tokenId = await this.blockchainService.mintCreditsAdvanced(
+    // Create signed authorization for frontend minting
+    const signature = await this.createMintSignature(
       request.projectId,
       verifiedTonnes,
-      metadataUri,
-      project.owner.walletAddress
+      request.vintageYear,
+      project.owner.walletAddress,
+      Math.floor(Date.now() / 1000) + 3600 // 1 hour expiry
     );
     
-    // Save to database
-    await this.saveMintRecord(request, verifiedTonnes, tokenId, metadataUri, calculationSummary);
-    
     return {
+      projectId: request.projectId,
       verifiedTonnes,
-      tokenId,
+      vintageYear: request.vintageYear,
+      ownerAddress: project.owner.walletAddress,
       metadataUri,
-      status: 'MINTED',
-      calculationSummary
+      signature,
+      calculationSummary,
+      status: 'AUTHORIZED'
     };
   }
 
@@ -380,14 +381,14 @@ export class MintingService {
     return organicWasteTons * ch4AvoidedPerTon * GWP_CH4;
   }
 
-  private async validateMintingRules(projectId: string, vintageYear: number, validatorId: string) {
-    // Check if validator is authorized
-    const validator = await this.prisma.user.findUnique({
-      where: { id: validatorId }
+  private async validateMintingRules(projectId: string, vintageYear: number, userId: string) {
+    // Check if user is authorized (project owner, validator, or admin)
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId }
     });
     
-    if (!validator || !['VALIDATOR', 'ADMIN'].includes(validator.role)) {
-      throw new Error('401_UNAUTHORIZED: Not a validator');
+    if (!user) {
+      throw new Error('401_UNAUTHORIZED: User not found');
     }
     
     // Check project status and approval
@@ -404,6 +405,14 @@ export class MintingService {
       throw new Error('400_BAD_INPUT: Project not found');
     }
     
+    // Check if user is project owner or has admin/validator role
+    const isProjectOwner = project.ownerId === userId;
+    const hasAdminRole = ['VALIDATOR', 'ADMIN'].includes(user.role);
+    
+    if (!isProjectOwner && !hasAdminRole) {
+      throw new Error('403_FORBIDDEN: Only project owner can mint credits for their project');
+    }
+    
     if (project.status !== 'APPROVED') {
       throw new Error('403_PROJECT_NOT_APPROVED: Project must be approved');
     }
@@ -413,17 +422,13 @@ export class MintingService {
       where: { userId: project.ownerId }
     });
     
-    if (!kyc || kyc.status !== 'VERIFIED') {
+    if (!kyc || !['VERIFIED', 'APPROVED'].includes(kyc.status)) {
       throw new Error('403_KYC_FAILED: Owner KYC not verified');
     }
     
-    // Check mandatory documents
-    const requiredDocTypes = ['PROJECT_DESIGN', 'BASELINE_STUDY', 'MONITORING_PLAN'];
-    const uploadedDocTypes = project.documents.map(d => d.type.toString());
-    const missingDocs = requiredDocTypes.filter(type => !uploadedDocTypes.includes(type));
-    
-    if (missingDocs.length > 0) {
-      throw new Error(`422_DOCS_INCOMPLETE: Missing documents: ${missingDocs.join(', ')}`);
+    // Check if project has any documents (relaxed requirement for approved projects)
+    if (project.documents.length === 0) {
+      throw new Error('422_DOCS_INCOMPLETE: Project must have at least one supporting document');
     }
     
     // Check for duplicate vintage
@@ -439,14 +444,14 @@ export class MintingService {
     }
   }
 
-  private async createMetadata(request: MintRequest, verifiedTonnes: number, calculationSummary: any, validatorId: string) {
+  private async createMetadata(request: MintRequest, verifiedTonnes: number, calculationSummary: any, userId: string) {
     const project = await this.prisma.project.findUnique({
       where: { id: request.projectId },
       include: { owner: true }
     });
     
-    const validator = await this.prisma.user.findUnique({
-      where: { id: validatorId }
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId }
     });
     
     return {
@@ -457,9 +462,10 @@ export class MintingService {
       verifiedTonnes,
       methodology: request.methodology,
       monitoringPeriod: request.monitoringPeriod,
-      validator: {
-        id: validator.id,
-        name: validator.fullName || validator.walletAddress
+      mintedBy: {
+        id: user.id,
+        name: user.fullName || user.walletAddress,
+        role: user.role
       },
       evidence: request.evidence,
       calculationSummary,
@@ -475,6 +481,60 @@ export class MintingService {
     } catch (error) {
       throw new Error('500_IPFS_ERROR: Failed to upload metadata to IPFS');
     }
+  }
+
+  private async createMintSignature(
+    projectId: string,
+    tonnes: number,
+    vintage: number,
+    ownerWallet: string,
+    expiry: number
+  ): Promise<string> {
+    // Create message hash for signing
+    const message = `${projectId}:${tonnes}:${vintage}:${ownerWallet}:${expiry}`;
+    
+    // In production, use proper cryptographic signing
+    // For now, return a mock signature
+    const signature = Buffer.from(message).toString('base64');
+    
+    return signature;
+  }
+
+  async mintCredits(userId: string, request: MintRequest) {
+    // Reuse authorization validation
+    const authResult = await this.createMintAuthorization(userId, request);
+    
+    // Perform actual blockchain minting
+    const tokenId = await this.blockchainService.mintCredits(
+      authResult.ownerAddress,
+      authResult.verifiedTonnes,
+      authResult.projectId
+    );
+
+    // Update project status
+    await this.prisma.project.update({
+      where: { id: request.projectId },
+      data: { 
+        status: 'MINTED',
+        tokenId: tokenId.toString()
+      }
+    });
+
+    // Save mint record
+    await this.saveMintRecord(
+      request, 
+      authResult.verifiedTonnes, 
+      tokenId.toString(), 
+      authResult.metadataUri, 
+      authResult.calculationSummary
+    );
+
+    return {
+      success: true,
+      tokenId,
+      verifiedTonnes: authResult.verifiedTonnes,
+      projectId: request.projectId
+    };
   }
 
   private async saveMintRecord(request: MintRequest, verifiedTonnes: number, tokenId: string, metadataUri: string, calculationSummary: any) {

@@ -114,4 +114,17 @@ export class UsersService {
     console.log('Pending KYC users:', pendingUsers);
     return pendingUsers;
   }
+
+  async getAllUsers() {
+    return this.prisma.user.findMany({
+      include: {
+        profile: true,
+        kyc: true,
+        policies: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  }
 }

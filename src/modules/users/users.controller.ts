@@ -45,4 +45,18 @@ export class UsersController {
   getPendingKYC() {
     return this.usersService.getPendingKYC();
   }
+
+  @Get('all')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  getAllUsers() {
+    return this.usersService.getAllUsers();
+  }
+
+  @Patch(':userId/role')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  updateUserRole(@Param('userId') userId: string, @Body() body: { role: UserRole }) {
+    return this.usersService.updateRole(userId, body.role);
+  }
 }

@@ -32,11 +32,22 @@ export class MonitoringService {
     });
   }
 
-  async verifyReport(reportId: string, validatorId: string) {
+  async verifyReport(reportId: string, validatorId: string, comments?: string) {
     return this.prisma.monitoringReport.update({
       where: { id: reportId },
       data: {
         status: 'VERIFIED',
+        verifiedBy: validatorId,
+        verificationDate: new Date(),
+      },
+    });
+  }
+
+  async rejectReport(reportId: string, validatorId: string, comments?: string) {
+    return this.prisma.monitoringReport.update({
+      where: { id: reportId },
+      data: {
+        status: 'REJECTED',
         verifiedBy: validatorId,
         verificationDate: new Date(),
       },
